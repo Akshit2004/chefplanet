@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../models/category_model.dart';
-import '../models/dish_model.dart';
-import '../services/mongodb_service.dart';
+import 'package:provider/provider.dart';
+import 'package:chef_plannet/models/category_model.dart';
+import 'package:chef_plannet/models/dish_model.dart';
+import 'package:chef_plannet/services/mongodb_service.dart';
+import 'package:chef_plannet/providers/cart_provider.dart';
+import 'package:chef_plannet/providers/auth_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -50,20 +53,47 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Deliver to', style: theme.textTheme.bodyMedium),
-            Row(
-              children: [
-                Text(
-                  '123 Culinary Ave, NY',
-                  style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const Icon(Icons.arrow_drop_down, size: 24),
-              ],
-            ),
-          ],
+        title: InkWell(
+          onTap: () => context.push('/shipping-addresses'),
+          child: Consumer<AuthProvider>(
+            builder: (context, auth, _) {
+              final address = auth.defaultAddress;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Deliver to', style: theme.textTheme.bodyMedium),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 120),
+                        child: ShaderMask(
+                          shaderCallback: (Rect bounds) {
+                            return const LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [Colors.black, Colors.transparent],
+                              stops: [0.85, 1.0],
+                            ).createShader(bounds);
+                          },
+                          blendMode: BlendMode.dstIn,
+                          child: Text(
+                            address != null 
+                                ? '${address.street}, ${address.city}' 
+                                : 'Select Address',
+                            style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                            maxLines: 1,
+                            overflow: TextOverflow.clip,
+                          ),
+                        ),
+                      ),
+                      const Icon(Icons.arrow_drop_down, size: 24),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
         ),
         actions: [
           IconButton(
@@ -174,17 +204,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     final category = _categories[index];
                     return Padding(
                       padding: const EdgeInsets.only(right: 16.0),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 35,
-                            backgroundImage: NetworkImage(category.imageUrl),
-                            onBackgroundImageError: (_, __) {},
-                            backgroundColor: Colors.grey.shade200,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(category.name, style: theme.textTheme.bodyMedium),
-                        ],
+                      child: GestureDetector(
+                        onTap: () => context.push('/category', extra: category),
+                        child: Column(
+                          children: [
+                            Hero(
+                              tag: 'category_${category.id}',
+                              child: CircleAvatar(
+                                radius: 35,
+                                backgroundImage: NetworkImage(category.imageUrl),
+                                onBackgroundImageError: (_, _) {},
+                                backgroundColor: Colors.grey.shade200,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(category.name, style: theme.textTheme.bodyMedium),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -304,15 +340,29 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedItemColor: theme.textTheme.bodyMedium?.color,
         showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(LucideIcons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(LucideIcons.search), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(LucideIcons.shoppingBag), label: 'Cart'),
-          BottomNavigationBarItem(icon: Icon(LucideIcons.user), label: 'Profile'),
+        items: [
+          const BottomNavigationBarItem(icon: Icon(LucideIcons.home), label: 'Home'),
+          const BottomNavigationBarItem(icon: Icon(LucideIcons.search), label: 'Search'),
+          BottomNavigationBarItem(
+            icon: Badge(
+              label: Text(Provider.of<CartProvider>(context).itemCount.toString()),
+              isLabelVisible: Provider.of<CartProvider>(context).itemCount > 0,
+              child: const Icon(LucideIcons.shoppingBag),
+            ),
+            label: 'Cart',
+          ),
+          const BottomNavigationBarItem(icon: Icon(LucideIcons.user), label: 'Profile'),
         ],
         onTap: (index) {
            if (index == 2) context.push('/menu');
-           if (index == 3) context.push('/profile');
+           if (index == 3) {
+             final authProvider = Provider.of<AuthProvider>(context, listen: false);
+             if (authProvider.isAuthenticated) {
+               context.push('/profile');
+             } else {
+               context.push('/login');
+             }
+           }
         },
       ),
     );

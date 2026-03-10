@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
@@ -40,6 +41,11 @@ class AppTheme {
           color: textPrimaryColor,
           fontSize: 20,
           fontWeight: FontWeight.w600,
+        ),
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent, // Default to transparent so AppBar color shows
+          statusBarIconBrightness: Brightness.dark, // Black icons for Android
+          statusBarBrightness: Brightness.light, // Black icons for iOS
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../models/dish_model.dart';
-import '../services/mongodb_service.dart';
+import 'package:chef_plannet/models/dish_model.dart';
+import 'package:chef_plannet/services/mongodb_service.dart';
+import 'package:provider/provider.dart';
+import 'package:chef_plannet/providers/cart_provider.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -118,29 +120,44 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Row(
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 8,
                     children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${_dish!.rating} (${_dish!.reviews} reviews)',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 20),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${_dish!.rating} (${_dish!.reviews})',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 24),
-                      const Icon(LucideIcons.clock, size: 20, color: Colors.grey),
-                      const SizedBox(width: 8),
-                      Text(
-                        _dish!.preparationTime,
-                        style: theme.textTheme.bodyMedium,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(LucideIcons.clock, size: 20, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Text(
+                            _dish!.preparationTime,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 24),
-                      const Icon(LucideIcons.flame, size: 20, color: Colors.red),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${_dish!.calories} cal',
-                        style: theme.textTheme.bodyMedium,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(LucideIcons.flame, size: 20, color: Colors.red),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${_dish!.calories} cal',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -238,9 +255,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    // TODO: Implement Add to Cart logic with Provider
+                    // Implement Add to Cart logic with Provider
+                    Provider.of<CartProvider>(context, listen: false).addItem(_dish!, _quantity);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Added ${_quantity}x ${_dish!.name} to cart')),
+                      SnackBar(
+                        content: Text('Added ${_quantity}x ${_dish!.name} to cart'),
+                        action: SnackBarAction(
+                          label: 'View Cart',
+                          onPressed: () => context.push('/menu'),
+                        ),
+                      ),
                     );
                   },
                   child: Row(

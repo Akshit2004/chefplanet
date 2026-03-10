@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:provider/provider.dart';
+import 'package:chef_plannet/providers/auth_provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:chef_plannet/widgets/animated_silhouette.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
+import 'dart:io';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -7,6 +14,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -24,18 +32,40 @@ class ProfileScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 24),
             // Profile Header
-            const CircleAvatar(
-              radius: 50,
-              backgroundImage: NetworkImage('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200'),
+            GestureDetector(
+              onTap: () => _pickImage(context),
+              child: Stack(
+                children: [
+                  auth.profileImageUrl != null
+                      ? CircleAvatar(
+                          radius: 50,
+                          backgroundImage: MemoryImage(base64Decode(auth.profileImageUrl!)),
+                        )
+                      : const AnimatedSilhouette(radius: 50),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: theme.primaryColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Icon(LucideIcons.camera, size: 16, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             Text(
-              'Alex Johnson',
+              auth.userName ?? 'User Name',
               style: theme.textTheme.displayLarge?.copyWith(fontSize: 24),
             ),
             const SizedBox(height: 4),
             Text(
-              'alex.johnson@chefplanet.com',
+              auth.userEmail ?? 'user@example.com',
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 32),
@@ -45,31 +75,36 @@ class ProfileScreen extends StatelessWidget {
               context,
               icon: LucideIcons.shoppingBag,
               title: 'My Orders',
-              subtitle: 'You have 2 active orders',
+              subtitle: auth.orders.isEmpty ? 'No active orders' : '${auth.orders.length} orders',
+              onTap: () => context.push('/orders'),
             ),
             _buildProfileOption(
               context,
               icon: LucideIcons.mapPin,
               title: 'Shipping Addresses',
-              subtitle: '3 addresses saved',
+              subtitle: auth.addresses.isEmpty ? 'Add your address' : '${auth.addresses.length} saved',
+              onTap: () => context.push('/addresses'),
             ),
             _buildProfileOption(
               context,
               icon: LucideIcons.creditCard,
               title: 'Payment Methods',
-              subtitle: 'Visa ending in **** 4242',
+              subtitle: 'Manage your payments',
+              onTap: () => context.push('/payment'),
             ),
             _buildProfileOption(
               context,
               icon: LucideIcons.bell,
               title: 'Notifications',
-              subtitle: 'On',
+              subtitle: 'App & Email',
+              onTap: () => context.push('/notifications'),
             ),
             _buildProfileOption(
               context,
               icon: LucideIcons.shield,
               title: 'Security',
-              subtitle: 'Password, FaceID',
+              subtitle: 'Account protection',
+              onTap: () => context.push('/security'),
             ),
             const SizedBox(height: 32),
             
@@ -79,7 +114,10 @@ class ProfileScreen extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () async {
+                    await Provider.of<AuthProvider>(context, listen: false).logout();
+                    if (context.mounted) context.go('/login');
+                  },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red,
                     side: const BorderSide(color: Colors.red),
@@ -99,7 +137,30 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileOption(BuildContext context, {required IconData icon, required String title, required String subtitle}) {
+  Future<void> _pickImage(BuildContext context) async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 75,
+    );
+
+    if (image != null) {
+      final bytes = await image.readAsBytes();
+      final base64String = base64Encode(bytes);
+      if (context.mounted) {
+        final success = await Provider.of<AuthProvider>(context, listen: false).updateProfileImage(base64String);
+        if (!success && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to update profile image')),
+          );
+        }
+      }
+    }
+  }
+
+  Widget _buildProfileOption(BuildContext context, {required IconData icon, required String title, required String subtitle, VoidCallback? onTap}) {
     final theme = Theme.of(context);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -114,7 +175,7 @@ class ProfileScreen extends StatelessWidget {
       title: Text(title, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
       subtitle: Text(subtitle, style: theme.textTheme.bodyMedium),
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }
