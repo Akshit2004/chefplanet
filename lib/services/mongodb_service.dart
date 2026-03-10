@@ -6,27 +6,62 @@ import '../models/dish_model.dart';
 
 class MongoDatabase {
   static final Logger _logger = Logger('MongoDatabase');
-  
-  static String get connectionString => dotenv.env['MONGODB_URI'] ?? '';
+
+  // Cache the URI after first successful load
+  static String? _cachedUri;
+
+  static String get connectionString {
+    if (_cachedUri != null) return _cachedUri!;
+    try {
+      _cachedUri = dotenv.env['MONGODB_URI'] ?? '';
+    } catch (_) {
+      // dotenv not initialized yet — return empty
+      return '';
+    }
+    return _cachedUri!;
+  }
 
   static Db? _db;
 
   static Future<void> connect() async {
-    if (_db != null && _db!.state == DbState.open) return;
+    // If already connected, skip
+    if (_db != null && _db!.isConnected) return;
+
+    // Reset any stale/broken connection
+    _db = null;
+
+    // Ensure dotenv is loaded
     try {
-      _db = await Db.create(connectionString);
-      await _db!.open().timeout(const Duration(seconds: 3));
-      _logger.info('Connected to MongoDB');
+      await dotenv.load(fileName: ".env");
+      _cachedUri = dotenv.env['MONGODB_URI'] ?? '';
+    } catch (_) {
+      // Already loaded or file issue — use cached
+    }
+
+    final uri = connectionString;
+    if (uri.isEmpty) {
+      _logger.severe('MONGODB_URI is empty — check your .env file');
+      return;
+    }
+
+    try {
+      _logger.info('Connecting to MongoDB...');
+      _db = await Db.create(uri);
+      await _db!.open().timeout(const Duration(seconds: 30));
+      _logger.info('Connected to MongoDB successfully');
     } catch (e) {
       _logger.severe('Could not connect to MongoDB: $e');
+      _db = null;
     }
   }
 
   static Future<List<Category>> getCategories() async {
-    if (_db == null) return [];
+    await connect();
+    if (_db == null || !_db!.isConnected) return [];
     try {
       final collection = _db!.collection('categories');
       final categories = await collection.find().toList();
+      _logger.info('Fetched ${categories.length} categories');
       return categories.map((json) => Category.fromJson(json)).toList();
     } catch (e) {
       _logger.warning('Error fetching categories: $e');
@@ -35,11 +70,12 @@ class MongoDatabase {
   }
 
   static Future<List<Dish>> getFeaturedDishes() async {
-    if (_db == null) return [];
+    await connect();
+    if (_db == null || !_db!.isConnected) return [];
     try {
       final collection = _db!.collection('dishes');
-      // For now, returning all dishes as featured
       final dishes = await collection.find().toList();
+      _logger.info('Fetched ${dishes.length} dishes');
       return dishes.map((json) => Dish.fromJson(json)).toList();
     } catch (e) {
       _logger.warning('Error fetching dishes: $e');
@@ -48,7 +84,8 @@ class MongoDatabase {
   }
 
   static Future<Dish?> getDishById(String id) async {
-    if (_db == null) return null;
+    await connect();
+    if (_db == null || !_db!.isConnected) return null;
     try {
       final collection = _db!.collection('dishes');
       final dishJson = await collection.findOne(where.eq('_id', id));

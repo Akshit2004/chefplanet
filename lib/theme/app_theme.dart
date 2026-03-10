@@ -16,7 +16,6 @@ class AppTheme {
       colorScheme: ColorScheme.light(
         primary: primaryColor,
         surface: surfaceColor,
-        background: backgroundColor,
       ),
       textTheme: GoogleFonts.interTextTheme().copyWith(
         displayLarge: GoogleFonts.inter(
@@ -46,7 +45,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
-          surface: Colors.white,
+          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
