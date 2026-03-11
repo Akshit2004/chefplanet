@@ -1,4 +1,5 @@
 import 'package:mongo_dart/mongo_dart.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:logging/logging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/category_model.dart';
@@ -8,9 +9,14 @@ import '../models/address_model.dart';
 
 class MongoDatabase {
   static final Logger _logger = Logger('MongoDatabase');
+  static const String _webUnsupportedMessage =
+      'Direct MongoDB access is not supported on Flutter web. Run the app on Windows or Android, or add a backend API.';
 
   // Cache the URI after first successful load
   static String? _cachedUri;
+  static String? _lastError;
+
+  static String? get lastError => _lastError;
 
   static String get connectionString {
     if (_cachedUri != null) return _cachedUri!;
@@ -25,9 +31,29 @@ class MongoDatabase {
 
   static Db? _db;
 
-  static Future<void> connect() async {
+  static ObjectId? _tryParseObjectId(dynamic value) {
+    if (value == null) return null;
+    if (value is ObjectId) return value;
+
+    try {
+      return ObjectId.fromHexString(value.toString());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<bool> connect() async {
+    if (kIsWeb) {
+      _lastError = _webUnsupportedMessage;
+      _logger.severe(_webUnsupportedMessage);
+      return false;
+    }
+
     // If already connected, skip
-    if (_db != null && _db!.isConnected) return;
+    if (_db != null && _db!.isConnected) {
+      _lastError = null;
+      return true;
+    }
 
     // Reset any stale/broken connection
     _db = null;
@@ -42,73 +68,99 @@ class MongoDatabase {
 
     final uri = connectionString;
     if (uri.isEmpty) {
-      _logger.severe('MONGODB_URI is empty — check your .env file');
-      return;
+      _lastError = 'MONGODB_URI is empty. Check your .env file.';
+      _logger.severe(_lastError!);
+      return false;
     }
 
     try {
       _logger.info('Connecting to MongoDB...');
       _db = await Db.create(uri);
       await _db!.open().timeout(const Duration(seconds: 30));
+      _lastError = null;
       _logger.info('Connected to MongoDB successfully');
+      return true;
     } catch (e) {
+      _lastError = 'Could not connect to MongoDB. $e';
       _logger.severe('Could not connect to MongoDB: $e');
       _db = null;
+      return false;
     }
   }
 
   static Future<List<Category>> getCategories() async {
-    await connect();
-    if (_db == null || !_db!.isConnected) return [];
+    if (!await connect()) return [];
+
     try {
       final collection = _db!.collection('categories');
       final categories = await collection.find().toList();
+      _lastError = null;
       _logger.info('Fetched ${categories.length} categories');
       return categories.map((json) => Category.fromJson(json)).toList();
     } catch (e) {
+      _lastError = 'Error fetching categories. $e';
       _logger.warning('Error fetching categories: $e');
       return [];
     }
   }
 
   static Future<List<Dish>> getFeaturedDishes() async {
-    await connect();
-    if (_db == null || !_db!.isConnected) return [];
+    if (!await connect()) return [];
+
     try {
       final collection = _db!.collection('dishes');
       final dishes = await collection.find().toList();
+      _lastError = null;
       _logger.info('Fetched ${dishes.length} dishes');
       return dishes.map((json) => Dish.fromJson(json)).toList();
     } catch (e) {
+      _lastError = 'Error fetching dishes. $e';
       _logger.warning('Error fetching dishes: $e');
       return [];
     }
   }
 
   static Future<Dish?> getDishById(String id) async {
-    await connect();
-    if (_db == null || !_db!.isConnected) return null;
+    if (!await connect()) return null;
+
     try {
       final collection = _db!.collection('dishes');
-      final dishJson = await collection.findOne(where.eq('_id', id));
+      final objectId = _tryParseObjectId(id);
+      final dishJson = await collection.findOne(
+        objectId != null ? where.id(objectId) : where.eq('_id', id),
+      );
+
       if (dishJson != null) {
+        _lastError = null;
         return Dish.fromJson(dishJson);
       }
     } catch (e) {
+      _lastError = 'Error finding dish. $e';
       _logger.warning('Error finding dish: $e');
     }
     return null;
   }
 
   static Future<List<Dish>> getDishesByCategory(String categoryId) async {
-    await connect();
-    if (_db == null || !_db!.isConnected) return [];
+    if (!await connect()) return [];
+
     try {
       final collection = _db!.collection('dishes');
-      final dishes = await collection.find(where.eq('categoryId', categoryId)).toList();
+      final categoryObjectId = _tryParseObjectId(categoryId);
+      final query = categoryObjectId == null
+          ? {'categoryId': categoryId}
+          : {
+              'categoryId': {
+                r'$in': [categoryId, categoryObjectId],
+              },
+            };
+      final dishes = await collection.find(query).toList();
+
+      _lastError = null;
       _logger.info('Fetched ${dishes.length} dishes for category $categoryId');
       return dishes.map((json) => Dish.fromJson(json)).toList();
     } catch (e) {
+      _lastError = 'Error fetching dishes for this category. $e';
       _logger.warning('Error fetching dishes for category $categoryId: $e');
       return [];
     }
@@ -121,12 +173,13 @@ class MongoDatabase {
     required String email,
     required String password,
   }) async {
-    await connect();
-    if (_db == null || !_db!.isConnected) return null;
+    if (!await connect()) {
+      return {'error': _lastError ?? 'Registration failed'};
+    }
 
     try {
       final collection = _db!.collection('users');
-      
+
       // Check if user already exists
       final existingUser = await collection.findOne(where.eq('email', email));
       if (existingUser != null) {
@@ -142,9 +195,11 @@ class MongoDatabase {
       };
 
       await collection.insertOne(userData);
+      _lastError = null;
       _logger.info('User registered successfully: $email');
       return userData;
     } catch (e) {
+      _lastError = 'Error registering user. $e';
       _logger.severe('Error registering user: $e');
       return {'error': 'Registration failed'};
     }
@@ -154,8 +209,9 @@ class MongoDatabase {
     required String email,
     required String password,
   }) async {
-    await connect();
-    if (_db == null || !_db!.isConnected) return null;
+    if (!await connect()) {
+      return {'error': _lastError ?? 'Login failed'};
+    }
 
     try {
       final collection = _db!.collection('users');
@@ -164,11 +220,13 @@ class MongoDatabase {
       );
 
       if (user != null) {
+        _lastError = null;
         _logger.info('User logged in successfully: $email');
         return user;
       }
       return {'error': 'Invalid email or password'};
     } catch (e) {
+      _lastError = 'Error logging in user. $e';
       _logger.severe('Error logging in user: $e');
       return {'error': 'Login failed'};
     }
@@ -179,14 +237,15 @@ class MongoDatabase {
     String? name,
     String? profileImageUrl,
   }) async {
-    await connect();
-    if (_db == null || !_db!.isConnected) return false;
+    if (!await connect()) return false;
 
     try {
       final collection = _db!.collection('users');
       final updateData = <String, dynamic>{};
       if (name != null) updateData['name'] = name;
-      if (profileImageUrl != null) updateData['profileImageUrl'] = profileImageUrl;
+      if (profileImageUrl != null) {
+        updateData['profileImageUrl'] = profileImageUrl;
+      }
 
       if (updateData.isEmpty) return true;
 
@@ -199,35 +258,43 @@ class MongoDatabase {
         where.id(ObjectId.fromHexString(userId)),
         updateModifier,
       );
+      _lastError = null;
       _logger.info('User profile updated: $userId');
       return true;
     } catch (e) {
+      _lastError = 'Error updating user profile. $e';
       _logger.severe('Error updating user profile: $e');
       return false;
     }
   }
 
   static Future<List<Order>> getUserOrders(String userId) async {
-    await connect();
-    if (_db == null || !_db!.isConnected) return [];
+    if (!await connect()) return [];
+
     try {
       final collection = _db!.collection('orders');
       final orders = await collection.find(where.eq('userId', userId)).toList();
+      _lastError = null;
       return orders.map((json) => Order.fromJson(json)).toList();
     } catch (e) {
+      _lastError = 'Error fetching user orders. $e';
       _logger.warning('Error fetching user orders: $e');
       return [];
     }
   }
 
   static Future<List<Address>> getUserAddresses(String userId) async {
-    await connect();
-    if (_db == null || !_db!.isConnected) return [];
+    if (!await connect()) return [];
+
     try {
       final collection = _db!.collection('addresses');
-      final addresses = await collection.find(where.eq('userId', userId)).toList();
+      final addresses = await collection
+          .find(where.eq('userId', userId))
+          .toList();
+      _lastError = null;
       return addresses.map((json) => Address.fromJson(json)).toList();
     } catch (e) {
+      _lastError = 'Error fetching user addresses. $e';
       _logger.warning('Error fetching user addresses: $e');
       return [];
     }
@@ -242,11 +309,11 @@ class MongoDatabase {
     required String zipCode,
     bool isDefault = false,
   }) async {
-    await connect();
-    if (_db == null || !_db!.isConnected) return false;
+    if (!await connect()) return false;
+
     try {
       final collection = _db!.collection('addresses');
-      
+
       // If this is the only address, make it default automatically
       final count = await collection.count(where.eq('userId', userId));
       if (count == 0) {
@@ -272,19 +339,21 @@ class MongoDatabase {
         'isDefault': isDefault,
       };
       await collection.insertOne(addressData);
+      _lastError = null;
       return true;
     } catch (e) {
+      _lastError = 'Error adding address. $e';
       _logger.severe('Error adding address: $e');
       return false;
     }
   }
 
   static Future<bool> setDefaultAddress(String userId, String addressId) async {
-    await connect();
-    if (_db == null || !_db!.isConnected) return false;
+    if (!await connect()) return false;
+
     try {
       final collection = _db!.collection('addresses');
-      
+
       // Clear default flag for all addresses of this user
       await collection.updateMany(
         where.eq('userId', userId),
@@ -293,12 +362,16 @@ class MongoDatabase {
 
       // Set the specified address to default
       await collection.updateOne(
-        where.id(ObjectId.fromHexString(addressId)).and(where.eq('userId', userId)),
+        where
+            .id(ObjectId.fromHexString(addressId))
+            .and(where.eq('userId', userId)),
         modify.set('isDefault', true),
       );
 
+      _lastError = null;
       return true;
     } catch (e) {
+      _lastError = 'Error setting default address. $e';
       _logger.severe('Error setting default address: $e');
       return false;
     }
@@ -311,8 +384,8 @@ class MongoDatabase {
     required String deliveryAddress,
     required String paymentMethod,
   }) async {
-    await connect();
-    if (_db == null || !_db!.isConnected) return false;
+    if (!await connect()) return false;
+
     try {
       final collection = _db!.collection('orders');
       final orderData = {
@@ -326,8 +399,10 @@ class MongoDatabase {
         'createdAt': DateTime.now().toIso8601String(),
       };
       await collection.insertOne(orderData);
+      _lastError = null;
       return true;
     } catch (e) {
+      _lastError = 'Error creating order. $e';
       _logger.severe('Error creating order: $e');
       return false;
     }

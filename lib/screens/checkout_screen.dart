@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../models/address_model.dart';
 import '../models/order_model.dart';
 import '../services/mongodb_service.dart';
+import '../services/razorpay_service.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -17,8 +18,9 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   Address? _selectedAddress;
-  String _selectedPaymentMethod = 'Visa Card';
+  String _selectedPaymentMethod = 'Razorpay';
   bool _isProcessing = false;
+  late RazorpayService _razorpayService;
 
   final double _deliveryFee = 2.50;
   final double _taxAndFees = 1.50;
@@ -26,6 +28,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
+    _razorpayService = RazorpayService();
     // Default to the first address if available, or finding nearest to default
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -39,6 +42,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _razorpayService.dispose();
+    super.dispose();
   }
 
   void _placeOrder(CartProvider cart, AuthProvider auth) async {
@@ -62,17 +71,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     final total = cart.totalAmount + _deliveryFee + _taxAndFees;
 
-    final orderItems = cart.items.values.map((item) => {
-      'dishId': item.id,
-      'name': item.name,
-      'quantity': item.quantity,
-      'price': item.price,
-    }).toList();
-
     if (auth.userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please log in to place an order')),
       );
+      return;
+    }
+
+    if (_selectedPaymentMethod == 'Razorpay') {
+      await _processRazorpayPayment(cart, auth, total);
       return;
     }
 
@@ -116,6 +123,55 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       );
       context.go('/');
     }
+  }
+
+  Future<void> _processRazorpayPayment(CartProvider cart, AuthProvider auth, double total) async {
+    if (auth.userId == null) return;
+
+    _razorpayService.checkout(
+      amount: total,
+      name: auth.userName ?? 'Customer',
+      email: auth.userEmail ?? 'customer@example.com',
+      mobile: '9999999999',
+      onSuccess: (paymentData) async {
+        final success = await MongoDatabase.createOrder(
+          userId: auth.userId!,
+          items: cart.items.values.map<OrderItem>((item) => OrderItem(
+            dishId: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+          )).toList(),
+          totalAmount: total,
+          deliveryAddress: '${_selectedAddress!.street}, ${_selectedAddress!.city}, ${_selectedAddress!.state} ${_selectedAddress!.zipCode}',
+          paymentMethod: 'Razorpay',
+        );
+
+        if (success) {
+          cart.clearCart();
+          await auth.fetchUserData();
+          if (mounted) {
+            setState(() {
+              _isProcessing = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Order placed successfully!')),
+            );
+            context.go('/');
+          }
+        }
+      },
+      onError: (error) {
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Payment failed: $error')),
+          );
+        }
+      },
+    );
   }
 
   @override
@@ -389,6 +445,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
+        _buildPaymentOption(
+          title: 'Razorpay (Test)',
+          subtitle: 'Pay securely via Razorpay',
+          icon: Icons.payment,
+          iconColor: Colors.white,
+          iconBgColor: const Color(0xFF3399FE),
+          value: 'Razorpay'
+        ),
+        const SizedBox(height: 12),
         _buildPaymentOption(
           title: '**** **** **** 4582',
           subtitle: 'Expires 09/25',
