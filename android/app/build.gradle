@@ -29,6 +29,24 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.debug
+
+            // --- APP SIZE REDUCTION ---
+            // R8 code shrinking: tree-shakes unused Dart/Java/Kotlin code
+            minifyEnabled true
+            // Remove unused resources (drawables, layouts, etc.)
+            shrinkResources true
+            // ProGuard/R8 rules
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    // Split APK by CPU architecture — each APK is ~40-60% smaller
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+            universalApk false
         }
     }
 }
@@ -36,3 +54,4 @@ android {
 flutter {
     source = "../.."
 }
+
