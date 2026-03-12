@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:chef_plannet/models/category_model.dart';
 import 'package:chef_plannet/models/dish_model.dart';
 import 'package:chef_plannet/services/mongodb_service.dart';
-import 'package:chef_plannet/providers/cart_provider.dart';
 import 'package:chef_plannet/providers/auth_provider.dart';
+import 'package:chef_plannet/widgets/chef_planet_bottom_nav_v2.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -151,6 +151,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 // Search Bar
                 TextField(
+                  readOnly: true,
+                  onTap: () => context.push('/search'),
                   decoration: InputDecoration(
                     hintText: 'Search for dishes...',
                     prefixIcon: const Icon(LucideIcons.search),
@@ -414,49 +416,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: theme.primaryColor,
-        unselectedItemColor: theme.textTheme.bodyMedium?.color,
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(LucideIcons.home),
-            label: 'Home',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(LucideIcons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Badge(
-              label: Text(
-                Provider.of<CartProvider>(context).itemCount.toString(),
-              ),
-              isLabelVisible: Provider.of<CartProvider>(context).itemCount > 0,
-              child: const Icon(LucideIcons.shoppingBag),
-            ),
-            label: 'Cart',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(LucideIcons.user),
-            label: 'Profile',
-          ),
-        ],
-        onTap: (index) {
-          if (index == 2) context.push('/menu');
-          if (index == 3) {
-            final authProvider = Provider.of<AuthProvider>(
-              context,
-              listen: false,
-            );
-            if (authProvider.isAuthenticated) {
-              context.push('/profile');
-            } else {
-              context.push('/login');
-            }
-          }
-        },
+      bottomNavigationBar: const ChefPlanetBottomNavV2(
+        currentTab: ChefPlanetNavTab.home,
       ),
     );
   }

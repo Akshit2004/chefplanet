@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:chef_plannet/providers/cart_provider.dart';
 import 'package:chef_plannet/providers/auth_provider.dart';
+import 'package:chef_plannet/widgets/chef_planet_bottom_nav_v2.dart';
 import '../widgets/app_toast.dart';
 
 class MenuCartScreen extends StatelessWidget {
@@ -18,10 +19,12 @@ class MenuCartScreen extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Your Cart'),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => context.pop(),
-        ),
+        leading: context.canPop()
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => context.pop(),
+              )
+            : null,
         actions: [
           if (cart.itemCount > 0)
             IconButton(
@@ -47,6 +50,9 @@ class MenuCartScreen extends StatelessWidget {
                 _buildSummary(context, theme, cart),
               ],
             ),
+      bottomNavigationBar: const ChefPlanetBottomNavV2(
+        currentTab: ChefPlanetNavTab.menu,
+      ),
     );
   }
 

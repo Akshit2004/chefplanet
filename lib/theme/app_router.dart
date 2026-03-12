@@ -12,19 +12,14 @@ import 'package:chef_plannet/screens/profile_options_screens.dart';
 import 'package:chef_plannet/screens/checkout_screen.dart';
 import 'package:chef_plannet/models/category_model.dart';
 import 'package:chef_plannet/screens/category_dishes_screen.dart';
+import 'package:chef_plannet/screens/search_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const HomeScreen(),
-      ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/signup',
         builder: (context, state) => const SignupScreen(),
@@ -36,6 +31,10 @@ class AppRouter {
       GoRoute(
         path: '/dishes',
         builder: (context, state) => const FeaturedDishesScreen(),
+      ),
+      GoRoute(
+        path: '/search',
+        builder: (context, state) => const SearchScreen(),
       ),
       GoRoute(
         path: '/product/:id',

@@ -5,6 +5,7 @@ import 'package:chef_plannet/providers/auth_provider.dart';
 import '../widgets/app_toast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chef_plannet/widgets/animated_silhouette.dart';
+import 'package:chef_plannet/widgets/chef_planet_bottom_nav_v2.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -147,6 +148,9 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 40),
           ],
         ),
+      ),
+      bottomNavigationBar: const ChefPlanetBottomNavV2(
+        currentTab: ChefPlanetNavTab.profile,
       ),
     );
   }

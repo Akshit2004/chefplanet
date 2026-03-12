@@ -166,6 +166,64 @@ class MongoDatabase {
     }
   }
 
+  /// Search for dishes using an optional free‑text query and/or category.
+  ///
+  /// The query is treated as a case‑insensitive substring match against
+  /// name, description and cuisine. Passing an empty string returns all
+  /// dishes (subject to category filter). Providing `categoryId` will
+  /// additionally restrict results to that category.
+  static Future<List<Dish>> searchDishes(
+    String query, {
+    String? categoryId,
+  }) async {
+    if (!await connect()) return [];
+
+    try {
+      final collection = _db!.collection('dishes');
+      final clauses = <Map<String, dynamic>>[];
+
+      if (query.isNotEmpty) {
+        final pattern = RegExp(RegExp.escape(query), caseSensitive: false);
+        clauses.add({
+          r'$or': [
+            {
+              'name': {'\$regex': pattern.pattern, '\$options': 'i'},
+            },
+            {
+              'description': {'\$regex': pattern.pattern, '\$options': 'i'},
+            },
+          ],
+        });
+      }
+
+      if (categoryId != null) {
+        final catObjectId = _tryParseObjectId(categoryId);
+        if (catObjectId != null) {
+          clauses.add({
+            r'$or': [
+              {'categoryId': categoryId},
+              {'categoryId': catObjectId},
+            ],
+          });
+        } else {
+          clauses.add({'categoryId': categoryId});
+        }
+      }
+      final Map<String, dynamic> queryMap = clauses.isEmpty
+          ? <String, dynamic>{}
+          : <String, dynamic>{'\$and': clauses};
+      final results = await collection.find(queryMap).toList();
+
+      _lastError = null;
+      _logger.info('Search returned ${results.length} dishes');
+      return results.map((j) => Dish.fromJson(j)).toList();
+    } catch (e) {
+      _lastError = 'Error searching dishes. $e';
+      _logger.warning('Error searching dishes: $e');
+      return [];
+    }
+  }
+
   // --- User Authentication ---
 
   static Future<Map<String, dynamic>?> registerUser({

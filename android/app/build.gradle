@@ -40,18 +40,43 @@ android {
         }
     }
 
-    // Split APK by CPU architecture — each APK is ~40-60% smaller
-    splits {
-        abi {
-            enable true
-            reset()
-            include 'armeabi-v7a', 'arm64-v8a', 'x86_64'
-            universalApk false
-        }
-    }
+    // The ABI split configuration was causing a conflict with the Flutter
+    // Gradle plugin (it also configures ndk.abiFilters automatically).
+    //
+    // When both `splits.abi` and `ndk.abiFilters` are present Gradle throws:
+    //
+    //   Conflicting configuration : 'armeabi-v7a,arm64-v8a,x86_64' in ndk
+    //   abiFilters cannot be present when splits abi filters are set …
+    //
+    // Instead of hard‑coding splits here, invoke the Flutter tooling with
+    // `flutter build apk --split-per-abi` (or `--target-platform`) which will
+    // enable the same behaviour without touching the Gradle file.
+    //
+    // The block has therefore been removed to avoid the evaluation error.
+    
+    // splits {
+    //     abi {
+    //         enable true
+    //         reset()
+    //         include 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+    //         universalApk false
+    //     }
+    // }
 }
 
 flutter {
     source = "../.."
+}
+
+// Add Play Core library used by Flutter's deferred components /
+// splitcompat support. Without this dependency R8 strips the classes
+// and your release build fails with "Missing class com.google.android.play.core...".
+//
+// If you don't use deferred components you can alternatively disable
+// them in your flutter build command, but including the library is
+// the simplest remedy and is recommended by Flutter docs.
+
+dependencies {
+    implementation 'com.google.android.play:core:1.10.3'
 }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:chef_plannet/widgets/chef_planet_bottom_nav_v2.dart';
 import '../providers/auth_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -13,15 +14,17 @@ class MyOrdersScreen extends StatelessWidget {
     final orders = auth.orders;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Orders'),
-      ),
+      appBar: AppBar(title: const Text('My Orders')),
       body: orders.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(LucideIcons.package, size: 64, color: theme.disabledColor),
+                  Icon(
+                    LucideIcons.package,
+                    size: 64,
+                    color: theme.disabledColor,
+                  ),
                   const SizedBox(height: 16),
                   Text('No orders yet', style: theme.textTheme.titleMedium),
                 ],
@@ -34,7 +37,9 @@ class MyOrdersScreen extends StatelessWidget {
                 final order = orders[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -45,10 +50,15 @@ class MyOrdersScreen extends StatelessWidget {
                           children: [
                             Text(
                               'Order #${order.id.substring(order.id.length - 6).toUpperCase()}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: theme.primaryColor.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
@@ -65,16 +75,20 @@ class MyOrdersScreen extends StatelessWidget {
                           ],
                         ),
                         const Divider(height: 24),
-                        ...order.items.map((item) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: Row(
-                                children: [
-                                  Text('${item.quantity}x '),
-                                  Expanded(child: Text(item.name)),
-                                  Text('\$${(item.price * item.quantity).toStringAsFixed(2)}'),
-                                ],
-                              ),
-                            )),
+                        ...order.items.map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Row(
+                              children: [
+                                Text('${item.quantity}x '),
+                                Expanded(child: Text(item.name)),
+                                Text(
+                                  '\$${(item.price * item.quantity).toStringAsFixed(2)}',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                         const Divider(height: 24),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -85,7 +99,10 @@ class MyOrdersScreen extends StatelessWidget {
                             ),
                             Text(
                               'Total: \$${order.totalAmount.toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                           ],
                         ),
@@ -95,6 +112,9 @@ class MyOrdersScreen extends StatelessWidget {
                 );
               },
             ),
+      bottomNavigationBar: const ChefPlanetBottomNavV2(
+        currentTab: ChefPlanetNavTab.orders,
+      ),
     );
   }
 }
