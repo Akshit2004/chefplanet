@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/mongodb_service.dart';
+import '../widgets/app_toast.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 class ShippingAddressesScreen extends StatelessWidget {
@@ -25,17 +26,22 @@ class ShippingAddressesScreen extends StatelessWidget {
     final addresses = auth.addresses;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Shipping Addresses'),
-      ),
+      appBar: AppBar(title: const Text('Shipping Addresses')),
       body: addresses.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(LucideIcons.mapPin, size: 64, color: theme.disabledColor),
+                  Icon(
+                    LucideIcons.mapPin,
+                    size: 64,
+                    color: theme.disabledColor,
+                  ),
                   const SizedBox(height: 16),
-                  Text('No addresses saved', style: theme.textTheme.titleMedium),
+                  Text(
+                    'No addresses saved',
+                    style: theme.textTheme.titleMedium,
+                  ),
                 ],
               ),
             )
@@ -46,7 +52,9 @@ class ShippingAddressesScreen extends StatelessWidget {
                 final address = addresses[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.all(16),
                     leading: Container(
@@ -56,29 +64,43 @@ class ShippingAddressesScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        address.label.toLowerCase() == 'home' ? LucideIcons.home : LucideIcons.briefcase,
+                        address.label.toLowerCase() == 'home'
+                            ? LucideIcons.home
+                            : LucideIcons.briefcase,
                         color: theme.primaryColor,
                       ),
                     ),
                     title: Row(
                       children: [
-                        Text(address.label, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text(
+                          address.label,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         if (address.isDefault)
                           Container(
                             margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.green.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Text(
                               'Default',
-                              style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                       ],
                     ),
-                    subtitle: Text('${address.street}, ${address.city}, ${address.state} ${address.zipCode}'),
+                    subtitle: Text(
+                      '${address.street}, ${address.city}, ${address.state} ${address.zipCode}',
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -87,18 +109,27 @@ class ShippingAddressesScreen extends StatelessWidget {
                             onPressed: () async {
                               final userId = auth.userId;
                               if (userId == null) return;
-                              
-                              final success = await MongoDatabase.setDefaultAddress(userId, address.id);
+
+                              final success =
+                                  await MongoDatabase.setDefaultAddress(
+                                    userId,
+                                    address.id,
+                                  );
                               if (success) {
                                 await auth.fetchUserData();
                               }
                             },
                             style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                            child: const Text('Set Default', style: TextStyle(fontSize: 12)),
+                            child: const Text(
+                              'Set Default',
+                              style: TextStyle(fontSize: 12),
+                            ),
                           ),
                         IconButton(
                           icon: const Icon(LucideIcons.edit3, size: 20),
@@ -162,16 +193,12 @@ class _AddAddressFormState extends State<_AddAddressForm> {
       await widget.auth.fetchUserData(); // reload to get the new address
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Address added successfully!')),
-        );
+        AppToast.show(context, 'Address added successfully!');
       }
     } else {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to add address')),
-        );
+        AppToast.show(context, 'Failed to add address', success: false);
       }
     }
   }
@@ -216,7 +243,8 @@ class _AddAddressFormState extends State<_AddAddressForm> {
               const SizedBox(height: 16),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Street Address'),
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Required' : null,
                 onSaved: (val) => _street = val!,
               ),
               const SizedBox(height: 16),
@@ -225,7 +253,8 @@ class _AddAddressFormState extends State<_AddAddressForm> {
                   Expanded(
                     child: TextFormField(
                       decoration: const InputDecoration(labelText: 'City'),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                      validator: (val) =>
+                          val == null || val.isEmpty ? 'Required' : null,
                       onSaved: (val) => _city = val!,
                     ),
                   ),
@@ -233,7 +262,8 @@ class _AddAddressFormState extends State<_AddAddressForm> {
                   Expanded(
                     child: TextFormField(
                       decoration: const InputDecoration(labelText: 'State'),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                      validator: (val) =>
+                          val == null || val.isEmpty ? 'Required' : null,
                       onSaved: (val) => _state = val!,
                     ),
                   ),
@@ -243,7 +273,8 @@ class _AddAddressFormState extends State<_AddAddressForm> {
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Zip Code'),
                 keyboardType: TextInputType.number,
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Required' : null,
                 onSaved: (val) => _zipCode = val!,
               ),
               const SizedBox(height: 16),

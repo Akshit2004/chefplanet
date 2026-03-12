@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:chef_plannet/providers/cart_provider.dart';
 import 'package:chef_plannet/providers/auth_provider.dart';
+import '../widgets/app_toast.dart';
 
 class MenuCartScreen extends StatelessWidget {
   const MenuCartScreen({super.key});
@@ -90,7 +91,12 @@ class MenuCartScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCartItem(BuildContext context, ThemeData theme, CartProvider cart, CartItem item) {
+  Widget _buildCartItem(
+    BuildContext context,
+    ThemeData theme,
+    CartProvider cart,
+    CartItem item,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
@@ -102,7 +108,7 @@ class MenuCartScreen extends StatelessWidget {
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
-          )
+          ),
         ],
       ),
       child: Row(
@@ -129,12 +135,17 @@ class MenuCartScreen extends StatelessWidget {
               children: [
                 Text(
                   item.name,
-                  style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '\$${item.price.toStringAsFixed(2)}',
-                  style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: theme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -148,7 +159,8 @@ class MenuCartScreen extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.remove, size: 18),
-                  onPressed: () => cart.updateQuantity(item.id, item.quantity - 1),
+                  onPressed: () =>
+                      cart.updateQuantity(item.id, item.quantity - 1),
                 ),
                 Text(
                   '${item.quantity}',
@@ -156,7 +168,8 @@ class MenuCartScreen extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.add, size: 18),
-                  onPressed: () => cart.updateQuantity(item.id, item.quantity + 1),
+                  onPressed: () =>
+                      cart.updateQuantity(item.id, item.quantity + 1),
                 ),
               ],
             ),
@@ -166,7 +179,11 @@ class MenuCartScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummary(BuildContext context, ThemeData theme, CartProvider cart) {
+  Widget _buildSummary(
+    BuildContext context,
+    ThemeData theme,
+    CartProvider cart,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -176,7 +193,7 @@ class MenuCartScreen extends StatelessWidget {
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
-          )
+          ),
         ],
       ),
       child: SafeArea(
@@ -185,7 +202,10 @@ class MenuCartScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Total:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Total:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 Text(
                   '\$${cart.totalAmount.toStringAsFixed(2)}',
                   style: TextStyle(
@@ -203,8 +223,10 @@ class MenuCartScreen extends StatelessWidget {
                 if (auth.isAuthenticated) {
                   context.push('/checkout');
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please log in to continue')),
+                  AppToast.show(
+                    context,
+                    'Please log in to continue',
+                    success: false,
                   );
                   context.push('/login');
                 }

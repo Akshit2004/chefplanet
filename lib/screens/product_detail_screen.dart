@@ -5,6 +5,7 @@ import 'package:chef_plannet/models/dish_model.dart';
 import 'package:chef_plannet/services/mongodb_service.dart';
 import 'package:provider/provider.dart';
 import 'package:chef_plannet/providers/cart_provider.dart';
+import '../widgets/app_toast.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -37,9 +38,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_dish == null) {
@@ -59,10 +58,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             expandedHeight: 300,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              background: Image.network(
-                _dish!.imageUrl,
-                fit: BoxFit.cover,
-              ),
+              background: Image.network(_dish!.imageUrl, fit: BoxFit.cover),
             ),
             leading: Padding(
               padding: const EdgeInsets.all(8.0),
@@ -106,7 +102,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Expanded(
                         child: Text(
                           _dish!.name,
-                          style: theme.textTheme.displayLarge?.copyWith(fontSize: 24),
+                          style: theme.textTheme.displayLarge?.copyWith(
+                            fontSize: 24,
+                          ),
                         ),
                       ),
                       Text(
@@ -140,7 +138,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(LucideIcons.clock, size: 20, color: Colors.grey),
+                          const Icon(
+                            LucideIcons.clock,
+                            size: 20,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             _dish!.preparationTime,
@@ -151,7 +153,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(LucideIcons.flame, size: 20, color: Colors.red),
+                          const Icon(
+                            LucideIcons.flame,
+                            size: 20,
+                            color: Colors.red,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             '${_dish!.calories} cal',
@@ -164,7 +170,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   const SizedBox(height: 24),
                   Text(
                     'Description',
-                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -172,11 +180,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Ingredients Section (Mocked)
                   Text(
                     'Ingredients',
-                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   SingleChildScrollView(
@@ -192,9 +202,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                           child: Column(
                             children: [
-                              const Icon(LucideIcons.chefHat, color: Colors.grey),
+                              const Icon(
+                                LucideIcons.chefHat,
+                                color: Colors.grey,
+                              ),
                               const SizedBox(height: 8),
-                              Text('Ingred ${index + 1}', style: theme.textTheme.bodyMedium),
+                              Text(
+                                'Ingred ${index + 1}',
+                                style: theme.textTheme.bodyMedium,
+                              ),
                             ],
                           ),
                         );
@@ -217,7 +233,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, -5),
-            )
+            ),
           ],
         ),
         child: SafeArea(
@@ -240,7 +256,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                     Text(
                       '$_quantity',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.add),
@@ -256,15 +275,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     // Implement Add to Cart logic with Provider
-                    Provider.of<CartProvider>(context, listen: false).addItem(_dish!, _quantity);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Added ${_quantity}x ${_dish!.name} to cart'),
-                        action: SnackBarAction(
-                          label: 'View Cart',
-                          onPressed: () => context.push('/menu'),
-                        ),
-                      ),
+                    Provider.of<CartProvider>(
+                      context,
+                      listen: false,
+                    ).addItem(_dish!, _quantity);
+                    AppToast.show(
+                      context,
+                      'Added ${_quantity}x ${_dish!.name} to cart',
+                      actionLabel: 'View Cart',
+                      onAction: () => context.push('/menu'),
                     );
                   },
                   child: Row(
@@ -274,12 +293,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       const SizedBox(width: 8),
                       Text(
                         'Add to Cart - \$${(_dish!.price * _quantity).toStringAsFixed(2)}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),

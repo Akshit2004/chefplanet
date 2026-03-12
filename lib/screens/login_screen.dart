@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:chef_plannet/providers/auth_provider.dart';
+import '../widgets/app_toast.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,7 +12,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
@@ -36,12 +38,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       ),
     );
 
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
-      ),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+          ),
+        );
 
     _animationController.forward();
   }
@@ -72,7 +75,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             child: Container(
               decoration: const BoxDecoration(
                 image: DecorationImage(
-                  image: NetworkImage('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200'),
+                  image: NetworkImage(
+                    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200',
+                  ),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -90,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               ),
             ),
           ),
-          
+
           // Back Button
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
@@ -124,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       color: Colors.black.withOpacity(0.05),
                       blurRadius: 20,
                       offset: const Offset(0, -5),
-                    )
+                    ),
                   ],
                 ),
                 child: FadeTransition(
@@ -137,12 +142,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       children: [
                         Text(
                           'Welcome Back',
-                          style: theme.textTheme.displayLarge?.copyWith(fontSize: 32),
+                          style: theme.textTheme.displayLarge?.copyWith(
+                            fontSize: 32,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Sign in to continue your gourmet journey',
-                          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 16),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 48),
 
@@ -173,20 +182,25 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             child: Text(
                               'Forgot Password?',
                               style: TextStyle(
-                                  color: theme.primaryColor, fontWeight: FontWeight.w600),
+                                color: theme.primaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 32),
 
-                         SizedBox(
+                        SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _isLoading
                                 ? null
                                 : () async {
                                     setState(() => _isLoading = true);
-                                    final auth = Provider.of<AuthProvider>(context, listen: false);
+                                    final auth = Provider.of<AuthProvider>(
+                                      context,
+                                      listen: false,
+                                    );
                                     final error = await auth.login(
                                       email: _emailController.text,
                                       password: _passwordController.text,
@@ -196,11 +210,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     if (error == null) {
                                       context.go('/');
                                     } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(error),
-                                          backgroundColor: Colors.redAccent,
-                                        ),
+                                      AppToast.show(
+                                        context,
+                                        error,
+                                        success: false,
                                       );
                                     }
                                   },
@@ -220,8 +233,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text('Sign In',
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                : const Text(
+                                    'Sign In',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -230,13 +248,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text("Don't have an account? ", style: theme.textTheme.bodyMedium),
+                            Text(
+                              "Don't have an account? ",
+                              style: theme.textTheme.bodyMedium,
+                            ),
                             GestureDetector(
                               onTap: () => context.push('/signup'),
-                              child: Text('Sign Up',
-                                  style: TextStyle(
-                                      color: theme.primaryColor, fontWeight: FontWeight.bold)),
-                            )
+                              child: Text(
+                                'Sign Up',
+                                style: TextStyle(
+                                  color: theme.primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 20),
@@ -279,8 +304,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           prefixIcon: Icon(icon, color: theme.primaryColor),
           suffixIcon: isPassword
               ? IconButton(
-                  icon: Icon(_obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
-                      color: Colors.grey),
+                  icon: Icon(
+                    _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
+                    color: Colors.grey,
+                  ),
                   onPressed: () {
                     setState(() => _obscurePassword = !_obscurePassword);
                   },

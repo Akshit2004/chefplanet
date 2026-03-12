@@ -24,14 +24,8 @@ class AppTheme {
           fontWeight: FontWeight.bold,
           fontSize: 32,
         ),
-        bodyLarge: GoogleFonts.inter(
-          color: textPrimaryColor,
-          fontSize: 16,
-        ),
-        bodyMedium: GoogleFonts.inter(
-          color: textSecondaryColor,
-          fontSize: 14,
-        ),
+        bodyLarge: GoogleFonts.inter(color: textPrimaryColor, fontSize: 16),
+        bodyMedium: GoogleFonts.inter(color: textSecondaryColor, fontSize: 14),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -43,7 +37,8 @@ class AppTheme {
           fontWeight: FontWeight.w600,
         ),
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent, // Default to transparent so AppBar color shows
+          statusBarColor: Colors
+              .transparent, // Default to transparent so AppBar color shows
           statusBarIconBrightness: Brightness.dark, // Black icons for Android
           statusBarBrightness: Brightness.light, // Black icons for iOS
         ),
@@ -57,6 +52,20 @@ class AppTheme {
           ),
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
+      ),
+      // make snackbars float with rounded corners and use the primary
+      // color by default so they look more like transient toasts than
+      // the old material bars that stretched the full width of the
+      // screen.
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: primaryColor,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        contentTextStyle: GoogleFonts.inter(color: Colors.white, fontSize: 14),
+        actionTextColor: Colors.white,
+        // SnackBarThemeData doesn't support a margin property; we handle
+        // spacing directly when creating toasts in AppToast.
       ),
     );
   }

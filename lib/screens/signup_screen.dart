@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:chef_plannet/providers/auth_provider.dart';
+import '../widgets/app_toast.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -11,7 +12,8 @@ class SignupScreen extends StatefulWidget {
   State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderStateMixin {
+class _SignupScreenState extends State<SignupScreen>
+    with SingleTickerProviderStateMixin {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -37,12 +39,13 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
       ),
     );
 
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
-      ),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+          ),
+        );
 
     _animationController.forward();
   }
@@ -73,7 +76,9 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
             child: Container(
               decoration: const BoxDecoration(
                 image: DecorationImage(
-                  image: NetworkImage('https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=1200'),
+                  image: NetworkImage(
+                    'https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=1200',
+                  ),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -91,7 +96,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
               ),
             ),
           ),
-          
+
           // Back Button
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
@@ -125,7 +130,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                       color: Colors.black.withOpacity(0.05),
                       blurRadius: 20,
                       offset: const Offset(0, -5),
-                    )
+                    ),
                   ],
                 ),
                 child: FadeTransition(
@@ -138,12 +143,16 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                       children: [
                         Text(
                           'Create Account',
-                          style: theme.textTheme.displayLarge?.copyWith(fontSize: 32),
+                          style: theme.textTheme.displayLarge?.copyWith(
+                            fontSize: 32,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Join Chef Planet to order the best meals.',
-                          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 16),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 48),
 
@@ -182,7 +191,10 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                 ? null
                                 : () async {
                                     setState(() => _isLoading = true);
-                                    final auth = Provider.of<AuthProvider>(context, listen: false);
+                                    final auth = Provider.of<AuthProvider>(
+                                      context,
+                                      listen: false,
+                                    );
                                     final error = await auth.signup(
                                       name: _nameController.text,
                                       email: _emailController.text,
@@ -193,11 +205,10 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                     if (error == null) {
                                       context.go('/');
                                     } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(error),
-                                          backgroundColor: Colors.redAccent,
-                                        ),
+                                      AppToast.show(
+                                        context,
+                                        error,
+                                        success: false,
                                       );
                                     }
                                   },
@@ -217,8 +228,13 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text('Sign Up',
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                : const Text(
+                                    'Sign Up',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -227,13 +243,20 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text("Already have an account? ", style: theme.textTheme.bodyMedium),
+                            Text(
+                              "Already have an account? ",
+                              style: theme.textTheme.bodyMedium,
+                            ),
                             GestureDetector(
                               onTap: () => context.go('/login'),
-                              child: Text('Sign In',
-                                  style: TextStyle(
-                                      color: theme.primaryColor, fontWeight: FontWeight.bold)),
-                            )
+                              child: Text(
+                                'Sign In',
+                                style: TextStyle(
+                                  color: theme.primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 20),
@@ -276,8 +299,10 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           prefixIcon: Icon(icon, color: theme.primaryColor),
           suffixIcon: isPassword
               ? IconButton(
-                  icon: Icon(_obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
-                      color: Colors.grey),
+                  icon: Icon(
+                    _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
+                    color: Colors.grey,
+                  ),
                   onPressed: () {
                     setState(() => _obscurePassword = !_obscurePassword);
                   },

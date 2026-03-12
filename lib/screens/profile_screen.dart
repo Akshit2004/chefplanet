@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:chef_plannet/providers/auth_provider.dart';
+import '../widgets/app_toast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chef_plannet/widgets/animated_silhouette.dart';
 import 'package:image_picker/image_picker.dart';
@@ -21,10 +22,7 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Profile'),
         actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.settings),
-            onPressed: () {},
-          )
+          IconButton(icon: const Icon(LucideIcons.settings), onPressed: () {}),
         ],
       ),
       body: SingleChildScrollView(
@@ -39,7 +37,9 @@ class ProfileScreen extends StatelessWidget {
                   auth.profileImageUrl != null
                       ? CircleAvatar(
                           radius: 50,
-                          backgroundImage: MemoryImage(base64Decode(auth.profileImageUrl!)),
+                          backgroundImage: MemoryImage(
+                            base64Decode(auth.profileImageUrl!),
+                          ),
                         )
                       : const AnimatedSilhouette(radius: 50),
                   Positioned(
@@ -52,7 +52,11 @@ class ProfileScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2),
                       ),
-                      child: const Icon(LucideIcons.camera, size: 16, color: Colors.white),
+                      child: const Icon(
+                        LucideIcons.camera,
+                        size: 16,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -75,14 +79,18 @@ class ProfileScreen extends StatelessWidget {
               context,
               icon: LucideIcons.shoppingBag,
               title: 'My Orders',
-              subtitle: auth.orders.isEmpty ? 'No active orders' : '${auth.orders.length} orders',
+              subtitle: auth.orders.isEmpty
+                  ? 'No active orders'
+                  : '${auth.orders.length} orders',
               onTap: () => context.push('/orders'),
             ),
             _buildProfileOption(
               context,
               icon: LucideIcons.mapPin,
               title: 'Shipping Addresses',
-              subtitle: auth.addresses.isEmpty ? 'Add your address' : '${auth.addresses.length} saved',
+              subtitle: auth.addresses.isEmpty
+                  ? 'Add your address'
+                  : '${auth.addresses.length} saved',
               onTap: () => context.push('/addresses'),
             ),
             _buildProfileOption(
@@ -107,7 +115,7 @@ class ProfileScreen extends StatelessWidget {
               onTap: () => context.push('/security'),
             ),
             const SizedBox(height: 32),
-            
+
             // Logout Button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -115,7 +123,10 @@ class ProfileScreen extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () async {
-                    await Provider.of<AuthProvider>(context, listen: false).logout();
+                    await Provider.of<AuthProvider>(
+                      context,
+                      listen: false,
+                    ).logout();
                     if (context.mounted) context.go('/login');
                   },
                   style: OutlinedButton.styleFrom(
@@ -126,7 +137,10 @@ class ProfileScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Log Out', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Log Out',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ),
@@ -150,17 +164,28 @@ class ProfileScreen extends StatelessWidget {
       final bytes = await image.readAsBytes();
       final base64String = base64Encode(bytes);
       if (context.mounted) {
-        final success = await Provider.of<AuthProvider>(context, listen: false).updateProfileImage(base64String);
+        final success = await Provider.of<AuthProvider>(
+          context,
+          listen: false,
+        ).updateProfileImage(base64String);
         if (!success && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to update profile image')),
+          AppToast.show(
+            context,
+            'Failed to update profile image',
+            success: false,
           );
         }
       }
     }
   }
 
-  Widget _buildProfileOption(BuildContext context, {required IconData icon, required String title, required String subtitle, VoidCallback? onTap}) {
+  Widget _buildProfileOption(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+  }) {
     final theme = Theme.of(context);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -172,7 +197,10 @@ class ProfileScreen extends StatelessWidget {
         ),
         child: Icon(icon, color: theme.primaryColor),
       ),
-      title: Text(title, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
+      title: Text(
+        title,
+        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+      ),
       subtitle: Text(subtitle, style: theme.textTheme.bodyMedium),
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
       onTap: onTap,
